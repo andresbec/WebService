@@ -1,0 +1,41 @@
+CREATE OR REPLACE PROCEDURE P_CONSULTA_NIT_WS(
+    p_nit               IN VARCHAR2, 
+    p_cur_nit           OUT SYS_REFCURSOR, 
+    p_codigo            OUT VARCHAR, 
+    p_respuesta         OUT VARCHAR2
+) IS
+
+    cursor cu_nit is
+        select nit
+        from v_clientes_api 
+        where nit = p_nit;
+    r_nit cu_nit%rowtype; 
+    
+BEGIN
+    open cu_nit; fetch cu_nit into r_nit; close cu_nit;
+
+    if r_nit.nit is null then
+        p_codigo := '101';
+        p_respuesta := 'Cliente no existe';    
+    else 
+        p_codigo := '200';
+        open p_cur_nit for 
+            select nit "Nit", 
+                codigoone "CodigoONE", 
+                razonsocial "RazonSocial", 
+                direccion "Direccion", 
+                ciudad "Ciudad", 
+                pbx "Pbx", 
+                paginaweb "PaginaWeb", 
+                correo "Correo"
+            from v_clientes_api 
+            where nit = p_nit;
+    end if;
+        
+    begin
+        insert into p_log_consultanit_ws (nit, cod_respuesta) values (p_nit, p_codigo);
+        commit;
+    exception when others then null;
+    end;
+END;
+/
